@@ -1,8 +1,9 @@
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
-import { graphql } from 'graphql';
+import { graphql, parse, validate } from 'graphql';
 import { gqlSchema as schema } from './gql-schema.js';
 import { createGqlResponseSchema, gqlResponseSchema } from './schemas.js';
 import { MemberTypeId } from '../member-types/schemas.js';
+import depthLimit from 'graphql-depth-limit';
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   const { prisma } = fastify;
@@ -36,14 +37,28 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
                   subscribedToUser: {
                     include: {
                       subscriber: {
-                        include: { subscribedToUser: true, userSubscribedTo: true },
+                        include: {
+                          userSubscribedTo: {
+                            include: {
+                              author: {
+                                include: {
+                                  subscribedToUser: true,
+                                  userSubscribedTo: true,
+                                },
+                              },
+                            },
+                          },
+                        },
                       },
                     },
                   },
                   userSubscribedTo: {
                     include: {
                       author: {
-                        include: { subscribedToUser: true, userSubscribedTo: true },
+                        include: {
+                          subscribedToUser: true,
+                          userSubscribedTo: true,
+                        },
                       },
                     },
                   },
@@ -58,14 +73,28 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
                   subscribedToUser: {
                     include: {
                       subscriber: {
-                        include: { subscribedToUser: true, userSubscribedTo: true },
+                        include: {
+                          userSubscribedTo: {
+                            include: {
+                              author: {
+                                include: {
+                                  subscribedToUser: true,
+                                  userSubscribedTo: true,
+                                },
+                              },
+                            },
+                          },
+                        },
                       },
                     },
                   },
                   userSubscribedTo: {
                     include: {
                       author: {
-                        include: { subscribedToUser: true, userSubscribedTo: true },
+                        include: {
+                          subscribedToUser: true,
+                          userSubscribedTo: true,
+                        },
                       },
                     },
                   },
@@ -80,15 +109,15 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
 
       return {
         ...user,
-        subscribedToUser: user?.subscribedToUser.map((sub) => ({
+        subscribedToUser: user.subscribedToUser.map((sub) => ({
           ...sub.subscriber,
-          subscribedToUser: sub?.subscriber.subscribedToUser.map((u) => u.subscriber),
-          userSubscribedTo: sub?.subscriber.userSubscribedTo.map((u) => u.author),
+          subscribedToUser: sub.subscriber.subscribedToUser.map((u) => u.subscriber),
+          userSubscribedTo: sub.subscriber.userSubscribedTo.map((u) => u.author),
         })),
-        userSubscribedTo: user?.userSubscribedTo.map((sub) => ({
+        userSubscribedTo: user.userSubscribedTo.map((sub) => ({
           ...sub.author,
-          subscribedToUser: sub.author?.subscribedToUser.map((u) => u.subscriber),
-          userSubscribedTo: sub.author?.userSubscribedTo.map((u) => u.author),
+          subscribedToUser: sub.author.subscribedToUser.map((u) => u.subscriber),
+          userSubscribedTo: sub.author.userSubscribedTo.map((u) => u.author),
         })),
       };
     },
@@ -252,6 +281,14 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       };
 
       try {
+        const document = parse(query);
+
+        // Валидируем глубину с помощью depthLimit
+        const errors = validate(schema, document, [depthLimit(5)]);
+        if (errors.length > 0) {
+          return { errors };
+        }
+
         const result = await graphql({
           schema,
           source: query,
