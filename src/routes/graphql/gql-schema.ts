@@ -7,11 +7,12 @@ export const gqlSchema = buildSchema(`
     id: UUID!
     name: String!
     balance: Float!
+    profile: Profile
   }
 
   type Post {
     id: UUID!
-    title: String!
+    title: String
     content: String
   }
 
@@ -34,12 +35,12 @@ export const gqlSchema = buildSchema(`
 
   type Query {
     users: [User]!
-    user(id: UUID!): User!
+    user(id: UUID!): User
     posts: [Post]!
-    post(id: UUID!): Post!
+    post(id: UUID!): Post
     profiles: [Profile]!
-    profile(id: UUID!): Profile!
+    profile(id: UUID!): Profile
     memberTypes: [MemberType]!
-    memberType(id: MemberTypeId!): MemberType!
+    memberType(id: MemberTypeId!): MemberType
   }
 `);
