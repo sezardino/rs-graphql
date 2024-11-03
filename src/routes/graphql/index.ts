@@ -9,116 +9,29 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
 
   const root = {
     users: async () => {
-      return await prisma.user.findMany();
+      return await prisma.user.findMany({
+        include: {
+          posts: true,
+          profile: {
+            include: { memberType: true },
+          },
+        },
+      });
     },
     user: async ({ id }: { id: string }) => {
       const user = await prisma.user.findUnique({
         where: { id },
         include: {
-          userSubscribedTo: {
-            select: {
-              subscriber: {
-                include: {
-                  userSubscribedTo: {
-                    select: {
-                      author: {
-                        include: {
-                          subscribedToUser: {
-                            select: {
-                              subscriber: true,
-                            },
-                          },
-                          userSubscribedTo: {
-                            select: {
-                              author: true,
-                            },
-                          },
-                        },
-                      },
-                    },
-                  },
-                  subscribedToUser: {
-                    select: {
-                      subscriber: {
-                        include: {
-                          userSubscribedTo: {
-                            select: {
-                              author: true,
-                            },
-                          },
-                          subscribedToUser: {
-                            select: {
-                              subscriber: true,
-                            },
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-          subscribedToUser: {
-            select: {
-              author: {
-                include: {
-                  userSubscribedTo: {
-                    select: {
-                      author: {
-                        include: {
-                          subscribedToUser: {
-                            select: {
-                              subscriber: true,
-                            },
-                          },
-                          userSubscribedTo: {
-                            select: {
-                              author: true,
-                            },
-                          },
-                        },
-                      },
-                    },
-                  },
-                  subscribedToUser: {
-                    select: {
-                      subscriber: {
-                        include: {
-                          userSubscribedTo: {
-                            select: {
-                              author: true,
-                            },
-                          },
-                          subscribedToUser: {
-                            select: {
-                              subscriber: true,
-                            },
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
+          posts: true,
+          profile: {
+            include: {
+              memberType: true,
             },
           },
         },
       });
 
-      return {
-        ...user,
-        userSubscribedTo: user?.userSubscribedTo.map((sub) => ({
-          ...sub,
-          userSubscribedTo: sub.subscriber.subscribedToUser.map((s) => s.subscriber),
-          subscribedToUser: sub.subscriber.userSubscribedTo.map((s) => s.author),
-        })),
-        subscribedToUser: user?.subscribedToUser.map((sub) => ({
-          ...sub,
-          userSubscribedTo: sub.author.subscribedToUser.map((s) => s.subscriber),
-          subscribedToUser: sub.author.userSubscribedTo.map((s) => s.author),
-        })),
-      };
+      return user;
     },
     posts: async () => {
       return await prisma.post.findMany();
