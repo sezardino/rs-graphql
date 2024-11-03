@@ -8,6 +8,7 @@ export const gqlSchema = buildSchema(`
     name: String!
     balance: Float!
     profile: Profile
+    posts: [Post]
   }
 
   type Post {
@@ -20,6 +21,7 @@ export const gqlSchema = buildSchema(`
     id: UUID!
     isMale: Boolean!
     yearOfBirth: Int!
+    memberType: MemberType
   }
 
   enum MemberTypeId {
