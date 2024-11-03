@@ -28,10 +28,68 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
               memberType: true,
             },
           },
+          subscribedToUser: {
+            include: {
+              subscriber: {
+                include: {
+                  subscribedToUser: {
+                    include: {
+                      subscriber: {
+                        include: { subscribedToUser: true, userSubscribedTo: true },
+                      },
+                    },
+                  },
+                  userSubscribedTo: {
+                    include: {
+                      author: {
+                        include: { subscribedToUser: true, userSubscribedTo: true },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          userSubscribedTo: {
+            include: {
+              author: {
+                include: {
+                  subscribedToUser: {
+                    include: {
+                      subscriber: {
+                        include: { subscribedToUser: true, userSubscribedTo: true },
+                      },
+                    },
+                  },
+                  userSubscribedTo: {
+                    include: {
+                      author: {
+                        include: { subscribedToUser: true, userSubscribedTo: true },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
       });
 
-      return user;
+      if (!user) return null;
+
+      return {
+        ...user,
+        subscribedToUser: user?.subscribedToUser.map((sub) => ({
+          ...sub.subscriber,
+          subscribedToUser: sub?.subscriber.subscribedToUser.map((u) => u.subscriber),
+          userSubscribedTo: sub?.subscriber.userSubscribedTo.map((u) => u.author),
+        })),
+        userSubscribedTo: user?.userSubscribedTo.map((sub) => ({
+          ...sub.author,
+          subscribedToUser: sub.author?.subscribedToUser.map((u) => u.subscriber),
+          userSubscribedTo: sub.author?.userSubscribedTo.map((u) => u.author),
+        })),
+      };
     },
     posts: async () => {
       return await prisma.post.findMany();
