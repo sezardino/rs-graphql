@@ -2,6 +2,7 @@ import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { graphql } from 'graphql';
 import { gqlSchema as schema } from './gql-schema.js';
 import { createGqlResponseSchema, gqlResponseSchema } from './schemas.js';
+import { MemberTypeId } from '../member-types/schemas.js';
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   const { prisma } = fastify;
@@ -10,14 +11,34 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     users: async () => {
       return await prisma.user.findMany();
     },
+    user: async ({ id }: { id: string }) => {
+      return await prisma.user.findUnique({
+        where: { id },
+      });
+    },
     posts: async () => {
       return await prisma.post.findMany();
+    },
+    post: async ({ id }: { id: string }) => {
+      return await prisma.post.findUnique({
+        where: { id },
+      });
     },
     memberTypes: async () => {
       return await prisma.memberType.findMany();
     },
+    memberType: async ({ id }: { id: MemberTypeId }) => {
+      return await prisma.memberType.findUnique({
+        where: { id },
+      });
+    },
     profiles: async () => {
       return await prisma.profile.findMany();
+    },
+    profile: async ({ id }: { id: string }) => {
+      return await prisma.profile.findUnique({
+        where: { id },
+      });
     },
   };
 
